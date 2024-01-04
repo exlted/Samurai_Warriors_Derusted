@@ -1,0 +1,65 @@
+Samurai Warriors De-Rusted Design Docs
+ - The game is a true roguelike
+ - Originally was written entirely in a terminal (Command Line)
+   - Going to be top-down 2D Graphical instead
+ - We're going to develop this entirely ourselves.
+ - We're also going to be making reusable plugins as much as possible
+
+ Menu System - Plugin
+  - Data Driven
+   - Load in the Menu Structure from an Asset
+  - Available as a Resource
+  - Extensible Renderer?
+  - Send Events on menu selection
+
+ Tile Renderer - Plugin
+  - Renders a tile & all things above it in order
+  - Might not need to actually render, just "draw" to the map?
+
+ Camera System - Plugin
+  - Likely connected to the Tile Renderer?
+  - By default, the camera won't need to move, so... simple!
+
+ Movement System - Internal
+  - Checks for Collisions
+  - Checks for Fights
+
+ Player Input Handler - Internal
+  - Update Player Position based off of Input Handler data
+
+  AI Handler - Internal
+   - Update AI Positions based off of AI... stuff... (we'll get to that later)
+
+  Fight/Attack - Internal
+   - Compute Attack vs Defense & update Health state of all associated entities
+   - If AI killed, send Exp event
+   - If Player killed, send Game Over event
+
+  Level Gen System - Internal
+   - Generates Map layouts
+   - Generates AI mobs
+
+  Level Up System - Internal
+   - Handles when player Levels up
+
+ Components -
+ Health -
+  int max_health
+  int current_health
+
+ Stats -
+  int attack
+  int defense
+
+ Position -
+  int x: left/right
+  int y: up/down
+  int z: front/back
+
+ Icon -
+  string(int?) asset_id
+  int asset_x
+  int asset_y
+
+ Tile Data -
+  bool passable

@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+
+members = [
+  "samurai_warriors_derusted",
+  "test_bevy_plugin",
+  "menu_system_plugin",
+  "asset_loading_plugin"
+]
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
