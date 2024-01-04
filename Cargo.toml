@@ -3,7 +3,6 @@ resolver = "2"
 
 members = [
   "samurai_warriors_derusted",
-  "test_bevy_plugin",
   "menu_system_plugin",
   "asset_loading_plugin"
 ]
