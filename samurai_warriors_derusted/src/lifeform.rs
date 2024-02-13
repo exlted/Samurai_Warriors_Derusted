@@ -1,7 +1,9 @@
+use bevy::prelude::Component;
 use bevy_ecs_tilemap::tiles::{TilePos, TileStorage};
 use crate::worldgen::TerrainData;
 
-struct Player;
+#[derive(Component)]
+pub struct Player;
 
 struct Enemy;
 
@@ -38,12 +40,13 @@ fn move_lifeform (direction: Direction, tile_pos: &mut TilePos, map_tile_storage
             next_pos.x -= 1;
         }
     }
-    if let Some(map_entity) = map_tile_storage.get(&next_pos) {
+    if let Some(map_entity) = map_tile_storage.checked_get(&next_pos) {
         // Check if entity is passable
-        if lifeform_tile_storage.get(&next_pos).is_none() {
-            return true;
+        return if lifeform_tile_storage.checked_get(&next_pos).is_none() {
+            true
         } else {
-
+            // TODO: Send an event to trigger an attack
+            false
         }
     }
 

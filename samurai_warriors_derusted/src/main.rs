@@ -2,7 +2,9 @@ mod tile_data;
 mod worldgen;
 mod lifeform;
 mod utils;
+mod world;
 
+use crate::lifeform::Player;
 use crate::tile_data::{RelatedTextureData, TileTextureData, TextureArray, WorldState};
 use std::any::TypeId;
 use bevy::prelude::*;
@@ -19,7 +21,6 @@ use crate::lifeform::Lifeform;
 
 const MAP_X: u32 = 100;
 const MAP_Y: u32 = 40;
-//const TILE_SIZE: TilemapTileSize = TilemapTileSize {x: 16.0, y: 16.0};
 
 type LoadedAssetData = LoadedData<TileTextureData>;
 type TileAssetLoadedEvent = AssetLoadedEvent<TileTextureData>;
@@ -32,7 +33,7 @@ enum AppState {
     AssetPrepped,
     //Menu,
     Generate,
-    //Play
+    Play
 }
 
 #[derive(Actionlike, PartialEq, Eq, Hash, Clone, Copy, Debug, Reflect)]
@@ -41,7 +42,8 @@ enum Action {
     South,
     East,
     West,
-    Skip
+    Skip,
+    Pause
 }
 
 fn main() {
@@ -55,11 +57,13 @@ fn main() {
         ))
         .add_state::<AppState>()
         .add_systems(Startup, load_assets)
+        .add_systems(Startup, spawn_player)
         .add_systems(Update, folder_loaded.run_if(on_event::<TileAssetLoadedEvent>()))
         .add_systems(Update, load_finished.run_if(on_event::<LoadingFinishedEvent>()))
         .add_systems(OnEnter(AppState::AssetLoaded), setup)
         .add_systems(OnEnter(AppState::AssetPrepped), skip_forward)
         .add_systems(OnEnter(AppState::Generate), generate)
+        .add_systems(Update, play.run_if(in_state(AppState::Play)))
         .insert_resource(TexturesToLoad{indexes: vec![]})
         .insert_resource(TextureArray{textures: vec![]})
         .run();
@@ -67,16 +71,20 @@ fn main() {
     // Input Docs: https://crates.io/crates/leafwing-input-manager
 }
 
-fn spawn_player() {
-    //InputManagerBundle::<Action> {
-    //    action_state: ActionState::default(),
-    //    input_map: InputMap::new([
-    //        (QwertyScanCode::W, Action::North),
-    //        (QwertyScanCode::A, Action::West),
-    //        (QwertyScanCode::S, Action::South),
-    //        (QwertyScanCode::D, Action::East)
-    //    ])
-    //}
+fn spawn_player(mut commands: Commands) {
+    commands.spawn(
+        InputManagerBundle::<Action> {
+            action_state: ActionState::default(),
+            input_map: InputMap::new([
+                (QwertyScanCode::W, Action::North),
+                (QwertyScanCode::A, Action::West),
+                (QwertyScanCode::S, Action::South),
+                (QwertyScanCode::D, Action::East),
+                (QwertyScanCode::Space, Action::Skip),
+                (QwertyScanCode::Escape, Action::Pause)
+            ])
+        }
+    ).insert(Player);
 }
 
 fn load_assets(
@@ -201,6 +209,7 @@ fn generate(
     texture_array: Res<TextureArray>,
     rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
     tile_data_holder: Res<LoadedAssetData>,
+    mut next_state: ResMut<NextState<AppState>>
 ) {
     commands.spawn(Camera2dBundle::default());
 
@@ -228,6 +237,7 @@ fn generate(
                     texture_index: map.terrain[x as usize][y as usize].texture,
                     ..Default::default()
                 })
+                .insert(map.terrain[x as usize][y as usize].tile_data.get_tile_data())
                 .id();
             tile_storage.set(&tile_pos, tile_entity);
         }
@@ -249,17 +259,18 @@ fn generate(
     });
 
     let tilemap_entity = commands.spawn_empty().id();
-    let tile_storage = TileStorage::empty(map_size);
+    let mut tile_storage = TileStorage::empty(map_size);
     for entity in map.entities {
-        let _tile_entity = commands
+        let tile_entity = commands
             .spawn(TileBundle {
                 position: entity.position,
                 tilemap_id: TilemapId(tilemap_entity),
                 texture_index: entity.texture.texture,
                 ..Default::default()
             })
+            .insert(entity.texture.tile_data.get_tile_data())
             .id();
-        //tile_storage.set(&entity.position, tile_entity);
+        tile_storage.set(&entity.position, tile_entity);
     }
 
     commands.entity(tilemap_entity).insert(TilemapBundle {
@@ -269,7 +280,25 @@ fn generate(
         storage: tile_storage,
         texture: TilemapTexture::Vector(texture_array.textures.clone()),
         tile_size,
-        transform: get_tilemap_center_transform(&map_size, &grid_size, &map_type, 0.0),
+        transform: get_tilemap_center_transform(&map_size, &grid_size, &map_type, 1.0),
         ..Default::default()
     });
+    next_state.set(AppState::Play);
+}
+
+fn play(query: Query<&ActionState<Action>, With<Player>>) {
+    let action_state = query.single();
+
+    let pressed_keys = action_state.get_just_pressed();
+
+    for key in pressed_keys {
+        match key {
+            Action::North => {println!("Going North")}
+            Action::South => {println!("Going South")}
+            Action::East => {println!("Going East")}
+            Action::West => {println!("Going West")}
+            Action::Skip => {println!("Skipping Turn")}
+            Action::Pause => {println!("Pausing Game")}
+        }
+    }
 }

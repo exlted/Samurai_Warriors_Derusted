@@ -5,7 +5,7 @@ use bevy_ecs_tilemap::prelude::TileTextureIndex;
 use bevy_rand::resource::GlobalEntropy;
 use bevy_prng::ChaCha8Rng;
 use crate::Lifeform;
-use bevy::prelude::{Handle, Image, Resource};
+use bevy::prelude::{Component, Handle, Image, Resource};
 use asset_loading_plugin::loader::{Loadable};
 use crate::worldgen::TerrainData;
 use crate::utils::rand_range;
@@ -105,11 +105,30 @@ impl TileTextureData {
         }
         panic!("Requested Texture for unknown Tile Data: {:#?}", self);
     }
+
+    fn is_passable(&self) -> bool {
+        return match self {
+            TileTextureData::None => {false}
+            TileTextureData::Floor => {true}
+            TileTextureData::Corridor { .. } => {true}
+            TileTextureData::Player => {false}
+            TileTextureData::Enemy => {false}
+            TileTextureData::Wall { .. } => {false}
+            TileTextureData::Entrance => {true}
+            TileTextureData::Exit => {true}
+        }
+    }
+
+    pub fn get_tile_data(&self) -> TileData {
+        return TileData {
+            passable: self.is_passable()
+        }
+    }
 }
 
-#[derive(Default)]
+#[derive(Default, Component)]
 pub struct TileData {
-    passable: bool
+    pub(crate) passable: bool
 }
 
 #[derive(Default, Clone)]
