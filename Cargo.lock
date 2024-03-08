@@ -3366,13 +3366,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "test_bevy_plugin"
-version = "0.1.0"
-dependencies = [
- "bevy",
-]
-
-[[package]]
 name = "thiserror"
 version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
